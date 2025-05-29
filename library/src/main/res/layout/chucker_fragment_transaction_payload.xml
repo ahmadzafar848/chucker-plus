@@ -107,7 +107,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingVertical="@dimen/chucker_doub_grid"
+        android:paddingBottom="80dp"
+        android:paddingTop="16dp"
         android:scrollbars="vertical"
         android:visibility="invisible"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
@@ -125,5 +126,17 @@
         android:visibility="gone"
         app:constraint_referenced_ids="emptyPayloadImage,emptyPayloadTextView"
         tools:visibility="visible" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/scrollFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/chucker_scroll_to_end"
+        android:src="@drawable/chucker_ic_arrow_down"
+        app:backgroundTint="@color/chucker_color_primary"
+        app:tint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

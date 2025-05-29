@@ -122,6 +122,31 @@ internal class TransactionPayloadFragment :
         payloadBinding.payloadRecyclerView.apply {
             setHasFixedSize(true)
             adapter = payloadAdapter
+            
+            // Initially hide FAB
+            payloadBinding.scrollFab.visibility = View.GONE
+            
+            // Add scroll listener to check if content is scrollable
+            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                if (payloadType == PayloadType.RESPONSE) {
+                    val isScrollable = computeVerticalScrollRange() > height
+                    payloadBinding.scrollFab.visibility = if (isScrollable) View.VISIBLE else View.GONE
+                }
+            }
+
+            // Add scroll listener to update FAB state
+            addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+                    if (payloadType == PayloadType.RESPONSE) {
+                        val layoutManager = recyclerView.layoutManager as androidx.recyclerview.widget.LinearLayoutManager
+                        val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+                        val lastItem = layoutManager.itemCount - 1
+                        
+                        val isAtBottom = lastVisibleItemPosition >= lastItem
+                        updateFabState(isAtBottom)
+                    }
+                }
+            })
         }
 
         viewModel.transaction.combineLatest(viewModel.formatRequestBody).observe(
@@ -134,9 +159,23 @@ internal class TransactionPayloadFragment :
                     val result = processPayload(payloadType, transaction, formatRequestBody)
                     if (result.isEmpty()) {
                         showEmptyState()
+                        payloadBinding.scrollFab.visibility = View.GONE
                     } else {
                         payloadAdapter.setItems(result)
                         showPayloadState()
+                        // Check scrollability after content is loaded
+                        payloadBinding.payloadRecyclerView.post {
+                            if (payloadType == PayloadType.RESPONSE) {
+                                val isScrollable = payloadBinding.payloadRecyclerView.computeVerticalScrollRange() > payloadBinding.payloadRecyclerView.height
+                                payloadBinding.scrollFab.visibility = if (isScrollable) View.VISIBLE else View.GONE
+                                
+                                // Check initial scroll position
+                                val layoutManager = payloadBinding.payloadRecyclerView.layoutManager as androidx.recyclerview.widget.LinearLayoutManager
+                                val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+                                val lastItem = layoutManager.itemCount - 1
+                                updateFabState(lastVisibleItemPosition >= lastItem)
+                            }
+                        }
                     }
                     // Invalidating menu, because we need to hide menu items for empty payloads
                     requireActivity().invalidateOptionsMenu()
@@ -150,6 +189,22 @@ internal class TransactionPayloadFragment :
         }
         payloadBinding.searchNavButtonUp.setOnClickListener {
             onSearchScrollerButtonClick(false)
+        }
+
+        // Add FAB click listener
+        payloadBinding.scrollFab.setOnClickListener {
+            val layoutManager = payloadBinding.payloadRecyclerView.layoutManager as androidx.recyclerview.widget.LinearLayoutManager
+            val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+            val lastItem = layoutManager.itemCount - 1
+            val isAtBottom = lastVisibleItemPosition >= lastItem
+
+            if (isAtBottom) {
+                // Scroll to top
+                payloadBinding.payloadRecyclerView.smoothScrollToPosition(0)
+            } else {
+                // Scroll to bottom
+                payloadBinding.payloadRecyclerView.smoothScrollToPosition(lastItem)
+            }
         }
     }
 
@@ -494,6 +549,16 @@ internal class TransactionPayloadFragment :
             type == PayloadType.RESPONSE && transaction.responseBody == null -> true
             else -> false
         }
+
+    private fun updateFabState(isAtBottom: Boolean) {
+        if (isAtBottom) {
+            payloadBinding.scrollFab.setImageResource(R.drawable.chucker_ic_arrow_up)
+            payloadBinding.scrollFab.contentDescription = getString(R.string.chucker_scroll_to_top)
+        } else {
+            payloadBinding.scrollFab.setImageResource(R.drawable.chucker_ic_arrow_down)
+            payloadBinding.scrollFab.contentDescription = getString(R.string.chucker_scroll_to_end)
+        }
+    }
 
     companion object {
         private const val ARG_TYPE = "type"

@@ -73,4 +73,6 @@
     <string name="chucker_copy_response">Copy Response</string>
     <string name="chucker_response_copied">Response Copied</string>
     <string name="chucker_request_copied">Request Copied</string>
+    <string name="chucker_scroll_to_end">Scroll to end</string>
+    <string name="chucker_scroll_to_top">Scroll to top</string>
 </resources>
